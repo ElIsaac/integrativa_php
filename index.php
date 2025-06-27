@@ -9,7 +9,8 @@ ini_set('display_errors', 0);
 error_reporting(0);
 
 // ========== MANEJO DE ERRORES ==========
-function jsonErrorResponse($code, $message, $details = null) {
+function jsonErrorResponse($code, $message, $details = null)
+{
     header('Content-Type: application/json', true, $code);
     echo json_encode([
         'success' => false,
@@ -23,7 +24,8 @@ function jsonErrorResponse($code, $message, $details = null) {
 }
 
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-    if (!(error_reporting() & $errno)) return;
+    if (!(error_reporting() & $errno))
+        return;
     jsonErrorResponse(500, 'Error de ejecución', [
         'tipo' => $errno,
         'mensaje' => $errstr,
@@ -79,10 +81,11 @@ switch ($route) {
         } elseif ($method === 'POST') {
             $input = json_decode(file_get_contents("php://input"), true);
             $nombre = $input['nombre'] ?? null;
-            $activo = isset($input['activo']) ? (bool)$input['activo'] : true;
+            $activo = isset($input['activo']) ? (bool) $input['activo'] : true;
 
-            if (!$nombre) jsonErrorResponse(400, 'El nombre es requerido');
-            
+            if (!$nombre)
+                jsonErrorResponse(400, 'El nombre es requerido');
+
             $db->insertCategorias($nombre, $activo);
             echo json_encode(['success' => true, 'message' => 'Categoría creada']);
         } else {
@@ -101,7 +104,7 @@ switch ($route) {
             $id_categoria = $input['id_categoria'] ?? null;
             $precio = $input['precio'] ?? null;
             $stock = $input['stock'] ?? 0;
-            $activo = isset($input['activo']) ? (bool)$input['activo'] : true;
+            $activo = isset($input['activo']) ? (bool) $input['activo'] : true;
 
             if (!$sku || !$nombre || !$id_categoria || !$precio) {
                 jsonErrorResponse(400, 'Faltan campos obligatorios');
@@ -119,7 +122,7 @@ switch ($route) {
             print_r($http->request('GET', '/ventas'));
 
             $data = $db->selectVentas();
-            
+
             //echo json_encode(['success' => true, 'data' => $data]);
         } elseif ($method === 'POST') {
             $input = json_decode(file_get_contents("php://input"), true);
@@ -131,9 +134,25 @@ switch ($route) {
                 jsonErrorResponse(400, 'Faltan campos obligatorios');
             }
 
-            
+            $producto = $db->getProductoPorId($id_producto);
+
+            if (!$producto) {
+                jsonErrorResponse(404, 'Producto no encontrado');
+            }
+
+            if ($producto['stock'] < $cantidad) {
+                jsonErrorResponse(400, 'No hay suficiente stock disponible', [
+                    'stock_actual' => $producto['stock'],
+                    'requerido' => $cantidad
+                ]);
+            }
+
+            // Registrar venta y actualizar stock
             $db->insertVentas($id_producto, $cantidad, $precio_unitario);
-            echo json_encode(['success' => true, 'message' => 'Venta registrada']);
+            $nuevo_stock = $producto['stock'] - $cantidad;
+            $db->updateStock($id_producto, $nuevo_stock);
+
+            echo json_encode(['success' => true, 'message' => 'Venta registrada y stock actualizado']);
         } else {
             jsonErrorResponse(405, 'Método no permitido');
         }
