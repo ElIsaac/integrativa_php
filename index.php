@@ -69,7 +69,7 @@ $route = rtrim($uri, '/');
 
 header('Content-Type: application/json');
 
-$http = new HttpClient('http://localhost:3000/');
+
 
 
 switch ($route) {
