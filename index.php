@@ -122,6 +122,7 @@ switch ($route) {
             
 
             $data = $db->selectVentas();
+            echo json_encode(['success' => true, 'data' => $data]);
 
             //echo json_encode(['success' => true, 'data' => $data]);
         } elseif ($method === 'POST') {
