@@ -119,7 +119,7 @@ switch ($route) {
 
     case '/integrativa/ventas':
         if ($method === 'GET') {
-            print_r($http->request('GET', '/ventas'));
+            
 
             $data = $db->selectVentas();
 
